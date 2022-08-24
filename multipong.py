@@ -7,12 +7,16 @@ pygame.init()
 clock = pygame.time.Clock()
 max_fps = 60
 
+max_balls = 10
+ball_spawn_rate = 1
+
 window_width = 500
 window_height = 700
 window = pygame.display.set_mode((window_width, window_height))
 pygame.display.set_caption("Multipong")
 
-colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), 
+          (128, 255, 0), (255, 128, 0), (128, 0, 255), (255, 0, 128), (0, 255, 128), (0, 128, 255)]
 
 class Block:
     def __init__(self, x, y, width, height, color):
@@ -77,23 +81,32 @@ balls = [MovableBlock(round(window_width/2), 100, 25, 25, (0, 255, 0), 200, math
 
 
 def addBall():
-    balls.append(MovableBlock(round(window_width/2), window_height*0.1, 25, 25,
-                 colors[random.randint(0, len(colors))], 200, random.uniform(math.pi/4, 3*math.pi/4)))
 
+    if random.randint(0, 1):
+        θ = random.uniform(math.pi/6, math.pi/3)
+    else:
+        θ = random.uniform(2*math.pi/3, 5*math.pi/6)
 
-addBall()
-addBall()
-addBall()
+    size = round(25*(0.5 + random.uniform(-0.3, 0.3)))
+
+    balls.append(MovableBlock(round(window_width*(0.5 + random.uniform(-0.3, 0.3))),
+                              round(window_height*(0.1 + random.uniform(-0.1, 0.1))),
+                              size, size, colors[random.randint(0, len(colors)-1)], 200, θ))
     
 
 
 game_over = False
-previous_t = pygame.time.get_ticks()
+start_t = pygame.time.get_ticks()
+previous_t = start_t
 
 while not game_over:
 
-    current_t = pygame.time.get_ticks() + 1
+    current_t = pygame.time.get_ticks()
     Δt = current_t - previous_t
+
+    if (current_t - start_t) / (1000 * ball_spawn_rate) > len(balls) and len(balls) < max_balls:
+        addBall()
+
     previous_t = current_t
 
     keys = pygame.key.get_pressed()
@@ -137,6 +150,7 @@ while not game_over:
                         ball.flip_vertical_vel()
                     elif (vertical_overlap > horizontal_overlap):
                         ball.flip_horizontal_vel()
+                    # ball.move(-Δt)
 
 
         # Check collision with player

@@ -8,7 +8,7 @@ clock = pygame.time.Clock()
 max_fps = 60
 
 max_balls = 10
-ball_spawn_rate = 1
+ball_spawn_rate = 5
 
 window_width = 500
 window_height = 700
@@ -64,6 +64,11 @@ class MovableBlock(Block):
         self.θ = 2*math.pi - self.θ
 
 
+def draw_game_over():
+    pygame.draw.rect(window, (0, 0, 0), (player.x, player.y, player.width, player.height))
+
+
+
 wall_thickness = 20
 wall_north = Block(0, -wall_thickness, window_width, wall_thickness, (0, 0, 255))
 wall_east = Block(window_width, 0, wall_thickness, window_height, (0, 0, 255))
@@ -87,7 +92,7 @@ def addBall():
     else:
         θ = random.uniform(2*math.pi/3, 5*math.pi/6)
 
-    size = round(25*(0.5 + random.uniform(-0.3, 0.3)))
+    size = round(25*(1 + random.uniform(-0.25, 0.25)))
 
     balls.append(MovableBlock(round(window_width*(0.5 + random.uniform(-0.3, 0.3))),
                               round(window_height*(0.1 + random.uniform(-0.1, 0.1))),
@@ -99,79 +104,81 @@ game_over = False
 start_t = pygame.time.get_ticks()
 previous_t = start_t
 
-while not game_over:
-
-    current_t = pygame.time.get_ticks()
-    Δt = current_t - previous_t
-
-    if (current_t - start_t) / (1000 * ball_spawn_rate) > len(balls) and len(balls) < max_balls:
-        addBall()
-
-    previous_t = current_t
+while True:
 
     keys = pygame.key.get_pressed()
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT or keys[pygame.K_q]:
-            game_over = True
+            exit()
 
-    if keys[pygame.K_LEFT]:
-        player.move(-Δt)
-        if player.horizontal_overlap(wall_west):
-            player.x = wall_west.x + wall_west.width
+    if not game_over:
 
-    elif keys[pygame.K_RIGHT]:
-        player.move(Δt)
-        if player.horizontal_overlap(wall_east):
-            player.x = wall_east.x - player.width
+        current_t = pygame.time.get_ticks()
+        Δt = current_t - previous_t
+        previous_t = current_t
 
-
-    for i, ball in enumerate(balls):
-
-        ball.move(Δt)
-
-        if ball.horizontal_overlap(wall_east) or ball.horizontal_overlap(wall_west):
-            ball.flip_horizontal_vel()
-
-        if ball.vertical_overlap(wall_north):
-            ball.flip_vertical_vel()
-
-        if ball.vertical_overlap(wall_south):
-            ball.flip_vertical_vel()
-
-        # Check collision with all other balls
-        for n, ba in enumerate(balls):
-            if n != i:
-                horizontal_overlap = ball.horizontal_overlap(ba)
-                vertical_overlap = ball.vertical_overlap(ba)
-
-                if horizontal_overlap and vertical_overlap:
-                    if (horizontal_overlap > vertical_overlap):
-                        ball.flip_vertical_vel()
-                    elif (vertical_overlap > horizontal_overlap):
-                        ball.flip_horizontal_vel()
-                    # ball.move(-Δt)
+        if (current_t - start_t) / (1000 * ball_spawn_rate) > len(balls) and len(balls) < max_balls:
+            addBall()
 
 
-        # Check collision with player
-        horizontal_overlap = ball.horizontal_overlap(player)
-        vertical_overlap = ball.vertical_overlap(player)
+        # Move player left
+        if keys[pygame.K_LEFT]:
+            player.move(-Δt)
+            if player.horizontal_overlap(wall_west):
+                player.x = wall_west.x + wall_west.width
 
-        if horizontal_overlap and vertical_overlap:
-            if (horizontal_overlap > vertical_overlap):
-                ball.flip_vertical_vel()
-            elif (vertical_overlap > horizontal_overlap):
+        # Move player right
+        elif keys[pygame.K_RIGHT]:
+            player.move(Δt)
+            if player.horizontal_overlap(wall_east):
+                player.x = wall_east.x - player.width
+
+
+        for i, ball in enumerate(balls):
+
+            ball.move(Δt)
+
+            if ball.horizontal_overlap(wall_east) or ball.horizontal_overlap(wall_west):
                 ball.flip_horizontal_vel()
-    
-    
-    # Clear previous frame
-    window.fill((0, 0, 0))
 
-    # Draw new frame
-    for ball in balls:
-        ball.draw(window)
+            if ball.vertical_overlap(wall_north):
+                ball.flip_vertical_vel()
 
-    pygame.draw.rect(window, (255, 0, 0), (player.x, player.y, player.width, player.height))
+            if ball.vertical_overlap(wall_south):
+                game_over = True
+
+            # Check collision with all other balls
+            for n, ba in enumerate(balls):
+                if n != i:
+                    horizontal_overlap = ball.horizontal_overlap(ba)
+                    vertical_overlap = ball.vertical_overlap(ba)
+
+                    if horizontal_overlap and vertical_overlap:
+                        if (horizontal_overlap > vertical_overlap):
+                            ball.flip_vertical_vel()
+                        elif (vertical_overlap > horizontal_overlap):
+                            ball.flip_horizontal_vel()
+
+
+            # Check collision with player
+            horizontal_overlap = ball.horizontal_overlap(player)
+            vertical_overlap = ball.vertical_overlap(player)
+
+            if horizontal_overlap and vertical_overlap:
+                if (horizontal_overlap > vertical_overlap):
+                    ball.flip_vertical_vel()
+                elif (vertical_overlap > horizontal_overlap):
+                    ball.flip_horizontal_vel()
+        
+        
+        # Clear previous frame
+        window.fill((0, 0, 0))
+
+        # Draw new frame
+        for ball in balls:
+            ball.draw(window)
+        player.draw(window)
+
+        pygame.display.update()
 
     clock.tick(max_fps)
-    pygame.display.update()

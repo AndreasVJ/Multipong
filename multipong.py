@@ -18,6 +18,12 @@ pygame.display.set_caption("Multipong")
 colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), 
           (128, 255, 0), (255, 128, 0), (128, 0, 255), (255, 0, 128), (0, 255, 128), (0, 128, 255)]
 
+font32 = pygame.font.Font("freesansbold.ttf", 32)
+font20 = pygame.font.Font("freesansbold.ttf", 20)
+game_over_text = font32.render("GAME OVER", True, (255, 0, 0))
+restart_text = font20.render("Press 'r' to play again", True, (255, 255, 255))
+
+
 class Block:
     def __init__(self, x, y, width, height, color):
         self.x = x
@@ -64,11 +70,6 @@ class MovableBlock(Block):
         self.θ = 2*math.pi - self.θ
 
 
-def draw_game_over():
-    pygame.draw.rect(window, (0, 0, 0), (player.x, player.y, player.width, player.height))
-
-
-
 wall_thickness = 20
 wall_north = Block(0, -wall_thickness, window_width, wall_thickness, (0, 0, 255))
 wall_east = Block(window_width, 0, wall_thickness, window_height, (0, 0, 255))
@@ -76,12 +77,11 @@ wall_south = Block(0, window_height, window_width, wall_thickness, (0, 0, 255))
 wall_west = Block(-wall_thickness, 0, wall_thickness, window_height, (0, 0, 255))
 
 
-player = MovableBlock(round(window_height*0.4), round(window_height*0.9), 
-                      round(window_height/10), round(window_height/40),
-                      (255, 0, 0), window_height * 0.75, 0)
+player = MovableBlock(round(window_width/2) - round(window_width/6), round(window_height*0.9), 
+                      round(window_width/3), round(window_height/40),
+                      (255, 0, 0), window_width*2, 0)
 
 
-# balls = []
 balls = [MovableBlock(round(window_width/2), 100, 25, 25, (0, 255, 0), 200, math.pi/4)]
 
 
@@ -110,6 +110,14 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or keys[pygame.K_q]:
             exit()
+
+    if keys[pygame.K_r]:
+
+        # Restart game
+        player.x = round(window_height*0.4)
+        balls = [MovableBlock(round(window_width/2), 100, 25, 25, (0, 255, 0), 200, math.pi/4)]
+        start_t = pygame.time.get_ticks()
+        game_over = False
 
     if not game_over:
 
@@ -178,6 +186,10 @@ while True:
         for ball in balls:
             ball.draw(window)
         player.draw(window)
+
+        if game_over:
+            window.blit(game_over_text, (round(window_width/2)-100, round(window_height/2)))
+            window.blit(restart_text, (round(window_width/2)-105, round(window_height/2) + 40))
 
         pygame.display.update()
 
